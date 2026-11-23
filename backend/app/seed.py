@@ -66,7 +66,22 @@ CREATE TABLE IF NOT EXISTS 旁路匣 (
   编号 INTEGER PRIMARY KEY AUTOINCREMENT,
   原因 TEXT NOT NULL,
   载荷 TEXT NOT NULL,
-  时刻 TEXT NOT NULL
+  时刻 TEXT NOT NULL,
+  状态 TEXT NOT NULL DEFAULT '未处理',
+  升格时刻 TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS 升格回执 (
+  编号 INTEGER PRIMARY KEY AUTOINCREMENT,
+  旁路编号 INTEGER NOT NULL UNIQUE REFERENCES 旁路匣(编号),
+  事件编号 TEXT NOT NULL,
+  房间键 TEXT NOT NULL,
+  原窗键 TEXT NOT NULL,
+  目标窗键 TEXT NOT NULL,
+  点赞 INTEGER NOT NULL DEFAULT 0,
+  送礼 INTEGER NOT NULL DEFAULT 0,
+  口径 TEXT NOT NULL,
+  原窗合计变 INTEGER NOT NULL DEFAULT 0,
+  升格时刻 TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS 窗贯验 (
   编号 INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,17 +103,23 @@ def 此刻() -> str:
 def 初始化库() -> None:
     conn = 连接()
     conn.executescript(建表)
-    if conn.execute("SELECT COUNT(*) AS c FROM 站规").fetchone()["c"] == 0:
-        for k, v in {
-            "站名": "播浪",
-            "窗长秒": "60",
-            "允许迟到秒": "30",
-            "水位推进策略": "事件时最大值",
-            "关窗条件": "水位>=窗止即关闭发射",
-            "旁路条件": "水位>=窗止+允许迟到",
-            "骨架": "互动事件入流→事件时间水位线推进→热度窗关闭发射→迟到修正撤回→窗输出与撤回互证",
-        }.items():
-            conn.execute("INSERT INTO 站规(键, 值) VALUES (?, ?)", (k, v))
+    # 旧库迁移：旁路匣补升格状态列
+    列 = {r["name"] for r in conn.execute("PRAGMA table_info(旁路匣)")}
+    if "状态" not in 列:
+        conn.execute("ALTER TABLE 旁路匣 ADD COLUMN 状态 TEXT NOT NULL DEFAULT '未处理'")
+    if "升格时刻" not in 列:
+        conn.execute("ALTER TABLE 旁路匣 ADD COLUMN 升格时刻 TEXT NOT NULL DEFAULT ''")
+    for k, v in {
+        "站名": "播浪",
+        "窗长秒": "60",
+        "允许迟到秒": "30",
+        "允许升格": "是",
+        "水位推进策略": "事件时最大值",
+        "关窗条件": "水位>=窗止即关闭发射",
+        "旁路条件": "水位>=窗止+允许迟到",
+        "骨架": "互动事件入流→事件时间水位线推进→热度窗关闭发射→迟到修正撤回→窗输出与撤回互证",
+    }.items():
+        conn.execute("INSERT OR IGNORE INTO 站规(键, 值) VALUES (?, ?)", (k, v))
     if conn.execute("SELECT COUNT(*) AS c FROM 直播间").fetchone()["c"] == 0:
         conn.execute(
             "INSERT INTO 直播间(房间键, 标题, 主播, 开播事件时, 状态) VALUES (?,?,?,?,?)",

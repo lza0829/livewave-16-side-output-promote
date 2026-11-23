@@ -21,6 +21,7 @@ export default function 热度台() {
         <div className="阶"><div className="序">③ 已关窗</div><b>{数.已关闭窗 ?? 0}</b><span>已发射</span></div>
         <div className="阶"><div className="序">④ 撤回</div><b>{数.撤回单数 ?? 数.撤回单 ?? 0}</b><span>迟到修正</span></div>
         <div className="阶"><div className="序">⑤ 旁路</div><b>{数.旁路匣 ?? 0}</b><span>超允许迟到</span></div>
+        <div className="阶"><div className="序">⑥ 升格</div><b>{数.升格回执 ?? 0}</b><span>已写新窗</span></div>
       </div>
       <div className="提示条">
         冒烟顺序：<Link to="/事件流">事件流</Link> 依次推三份样例 → 看水位线 / 热度窗 / 撤回单 / 旁路匣 →{" "}

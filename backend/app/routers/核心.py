@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.db import 夹具目录, 连接
-from app.services import 装载, 贯验, 目录
+from app.services import 装载, 贯验, 目录, 升格
 
 路由 = APIRouter(prefix="/api")
 
@@ -11,6 +11,10 @@ from app.services import 装载, 贯验, 目录
 class 装载请求(BaseModel):
     批次编号: str = ""
     事件: list = Field(default_factory=list)
+
+
+class 升格请求(BaseModel):
+    旁路编号: int
 
 
 @路由.get("/健康")
@@ -139,6 +143,28 @@ def 装夹具(名: str = "准时热度样例"):
 @路由.post("/贯验")
 def 做贯验():
     return 贯验.跑贯验()
+
+
+@路由.post("/升格")
+def 做升格(体: 升格请求):
+    """旁路升格：载荷计入升格时刻水位所在新窗；匣状态与窗合计同成败；重复升格只回执不双计。"""
+    try:
+        return 升格.升格一笔(体.旁路编号)
+    except 升格.旁路不存在 as e:
+        raise HTTPException(404, str(e))
+    except 升格.升格拒绝 as e:
+        raise HTTPException(409, str(e))
+
+
+@路由.get("/升格")
+def 列升格(旁路编号: int | None = None):
+    """升格只读接口：旁路编号/原窗键/目标窗键/原窗合计是否变/valid。带旁路编号则查单条。"""
+    if 旁路编号 is None:
+        return 升格.列升格()
+    r = 升格.取升格(旁路编号)
+    if not r:
+        raise HTTPException(404, f"无升格回执:旁路{旁路编号}")
+    return r
 
 
 @路由.get("/贯验")

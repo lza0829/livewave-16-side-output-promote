@@ -1,10 +1,16 @@
 import json
 from app.db import 连接
 from app.seed import 此刻
-from app.services import 时间, 热度窗
+from app.services import 入流闸, 时间, 热度窗
 
 
 def 装一批(体: dict) -> dict:
+    """入流与升格/贯验互斥：同持入流闸，闸内单事务，失败整体回滚。"""
+    with 入流闸.闸:
+        return _装一批(体)
+
+
+def _装一批(体: dict) -> dict:
     """入流一批互动事件：推进水位线，尝试关窗，处理迟到/旁路/撤回。
 
     口径（类 Flink）：
@@ -180,5 +186,8 @@ def 装一批(体: dict) -> dict:
         )
         conn.commit()
         return 报告
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()

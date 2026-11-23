@@ -12,4 +12,5 @@ def 连接() -> sqlite3.Connection:
     c = sqlite3.connect(库路径)
     c.row_factory = sqlite3.Row
     c.execute("PRAGMA foreign_keys = ON")
+    c.execute("PRAGMA busy_timeout = 5000")
     return c

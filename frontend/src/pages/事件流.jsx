@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { 取, 递 } from "../api.js";
 
-const 夹具 = ["准时热度样例", "迟到修正样例", "超迟到旁路样例"];
+const 夹具 = ["准时热度样例", "迟到修正样例", "超迟到旁路样例", "旁路升格样例"];
 
 export default function 事件流() {
   const [事, 设事] = useState([]);
